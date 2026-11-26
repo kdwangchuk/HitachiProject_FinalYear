@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hitachi Robot Dashboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#06101f; --panel:#0b1a30; --panel2:#0f2240; --line:#1d3a63;
+  --text:#e6f0ff; --muted:#8aa4c8; --cyan:#37c8ff; --green:#22e08a; --amber:#ffd23f; --red:#ff5a6a;
+  --btn:#10284a; --btnhover:#17375f;
+}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme="dark"]){
+    --bg:#e8eef7; --panel:#ffffff; --panel2:#eef3fb; --line:#b9c9e0;
+    --text:#0d1f3a; --muted:#52688a; --cyan:#0a7fb8; --green:#0b9a5a; --amber:#b88a00; --red:#c93445;
+    --btn:#e3ecf8; --btnhover:#d3e1f3;
+  }
+}
+:root[data-theme="dark"]{color-scheme:dark}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Barlow Semi Condensed","Segoe UI",system-ui,sans-serif;font-size:15px}
+.app{max-width:1400px;margin:0 auto;padding:14px;display:grid;gap:12px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}
+.panel h2{margin:0 0 10px;font-size:17px;font-weight:600;display:flex;align-items:center;gap:8px}
+.panel h2 .tag{margin-left:auto;font-size:13px;font-weight:500;color:var(--green);display:flex;align-items:center;gap:6px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--green);display:inline-block;flex:none}
+.dot.warn{background:var(--amber)} .dot.bad{background:var(--red)}
+header.panel{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{margin:0;font-size:22px;font-weight:700}
+header .sub{color:var(--muted);border-left:1px solid var(--line);padding-left:14px}
+header .chip{border:1px solid var(--line);border-radius:6px;padding:2px 10px;color:var(--muted);font-size:13px}
+header .right{margin-left:auto;display:flex;gap:12px;align-items:center}
+.run{border:1px solid var(--green);color:var(--green);border-radius:6px;padding:3px 12px;display:flex;align-items:center;gap:7px;font-weight:600}
+.main{display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:12px}
+.col{display:grid;gap:12px;align-content:start}
+.cam{aspect-ratio:16/9;background:repeating-linear-gradient(45deg,#0a1626,#0a1626 12px,#0c1b30 12px,#0c1b30 24px);border:1px solid var(--line);border-radius:8px;display:grid;place-items:center;color:var(--muted);position:relative;overflow:hidden}
+.cam img,.cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cam span{position:relative;text-align:center;line-height:1.3}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;color:var(--muted);font-size:13px}
+.legend i{display:inline-block;width:12px;height:12px;margin-right:5px;vertical-align:-1px}
+.mk{border:2px solid var(--green)} .pt{height:4px!important;background:var(--amber)} .tg{border:2px solid var(--amber);border-radius:50%}
+.map{background:var(--panel2);border:1px solid var(--line);border-radius:8px;width:100%;height:auto;display:block}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.stat small,.big small{color:var(--muted);display:block;font-size:13px}
+.stat b{font-size:22px;font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.big{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.big b{font-size:34px;font-weight:600;line-height:1.1}
+.big b em{font-size:15px;font-style:normal;color:var(--muted);font-weight:400;margin-left:4px}
+.bt{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.state{border:1px solid var(--line);border-radius:6px;padding:5px 12px;color:var(--muted);background:var(--panel2)}
+.state.on{border-color:var(--green);color:var(--green);background:rgba(34,224,138,.12);font-weight:600}
+.arrow{color:var(--muted)}
+.status-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.status-item{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+.status-item small{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.status-item b{font-weight:600}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
+.controls .sp{flex:1}
+button{font:inherit;color:var(--text);background:var(--btn);border:1px solid var(--line);border-radius:8px;padding:12px 22px;min-width:110px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:500}
+button:hover{background:var(--btnhover)}
+button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.start{background:var(--green);border-color:var(--green);color:#03150b;font-weight:700;min-width:150px}
+button.start:hover{filter:brightness(1.08)}
+button.stop svg{color:var(--red)}
+button.on{border-color:var(--amber);color:var(--amber)}
+.manual-warning{border:1px solid var(--amber);border-radius:8px;padding:10px 12px;color:var(--amber);background:rgba(255,210,63,.08)}
+.manual-arm{display:flex;align-items:flex-start;gap:9px;margin:12px 0;color:var(--text)}
+.manual-arm input{margin-top:4px;accent-color:var(--amber)}
+.manual-controls{display:grid;grid-template-columns:repeat(3,minmax(80px,110px));gap:8px;justify-content:center;margin:14px 0}
+.manual-controls button{min-width:0;min-height:60px;font-size:20px;touch-action:none;user-select:none}
+.manual-controls button[data-control="stop"]{color:var(--red);font-size:15px;font-weight:700}
+.manual-controls button[aria-pressed="true"]{border-color:var(--cyan);background:var(--btnhover);box-shadow:inset 0 0 0 1px var(--cyan)}
+.manual-note{color:var(--muted);margin:0;font-size:13px;text-align:center}
+.manual-status{color:var(--muted);text-align:center;min-height:1.3em}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--panel);border:1px solid var(--cyan);color:var(--text);padding:9px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+@media (max-width:1050px){.main{grid-template-columns:1fr 1fr}.col.c3{grid-column:1/-1}}
+@media (max-width:680px){.main{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr 1fr}button{flex:1;min-width:90px;padding:12px 10px}header .sub{border:0;padding:0}.controls .sp{display:none}.manual-controls{grid-template-columns:repeat(3,minmax(72px,1fr))}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z" fill="currentColor"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" fill="currentColor"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></symbol>
+  <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v5h5"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></symbol>
+  <symbol id="i-cam" viewBox="0 0 24 24"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+</svg>
+
+<main class="app">
+  <header class="panel">
+    <svg class="i" style="color:var(--cyan);width:28px;height:28px"><use href="#i-gear"/></svg>
+    <h1>AMR Robot Monitoring</h1>
+    <span class="sub">Line following &amp; marker localization</span>
+    <span class="chip" id="modeChip">ROS 2 dashboard</span>
+    <div class="right">
+      <span class="run" id="runBadge"><span class="dot"></span><span id="runText">Idle</span></span>
+      <span id="clock" style="color:var(--muted)">--</span>
+    </div>
+  </header>
+
+  <section class="main">
+    <!-- Column 1: cameras -->
+    <div class="col">
+      <div class="panel">
+        <h2><svg class="i"><use href="#i-cam"/></svg>Line detection <span class="tag"><span class="dot bad" id="dotFront"></span>Waiting</span></h2>
+        <div class="cam" id="camFront"><span>Waiting for ROS image data<br><small>/hardware/yellow_line_debug/compressed</small></span></div>
+        <div class="legend"><span><i class="pt"></i>Navigation path</span><span><i class="tg"></i>Path target</span></div>
+      </div>
+      <div class="panel">
+        <h2><svg class="i"><use href="#i-cam"/></svg>Marker detection <span class="tag"><span class="dot bad" id="dotDown"></span>Waiting</span></h2>
+        <div class="cam" id="camDown"><span>Waiting for ROS image data<br><small>/aruco_debug_image/compressed</small></span></div>
+        <div class="legend"><span><i class="mk"></i>ArUco marker (ID)</span><span id="markerId">Marker: none</span></div>
+      </div>
+    </div>
+
+    <!-- Column 2: pose -->
+    <div class="col">
+      <div class="panel">
+        <h2>Robot pose <span class="tag"><span class="dot bad" id="dotPose"></span>Waiting</span></h2>
+        <svg class="map" viewBox="0 0 300 330" role="img" aria-label="Robot position map">
+          <g stroke="var(--line)" stroke-width="1" opacity=".6">
+            <path d="M30 20H270M30 70H270M30 120H270M30 170H270M30 220H270M30 270H270M30 320H270"/>
+            <path d="M30 20V320M90 20V320M150 20V320M210 20V320M270 20V320"/>
+          </g>
+          <path d="M60 90V200H110V260M240 90V230H190" fill="none" stroke="var(--muted)" stroke-width="3"/>
+          <path d="M150 300V60" stroke="var(--amber)" stroke-width="4" stroke-dasharray="8 6" id="pathLine"/>
+          <circle cx="150" cy="50" r="9" fill="none" stroke="var(--amber)" stroke-width="3"/>
+          <text x="165" y="46" fill="var(--amber)" font-size="13">Goal</text>
+          <g id="robot" transform="translate(150 260) rotate(0)">
+            <rect x="-14" y="-14" width="28" height="28" fill="rgba(34,224,138,.15)" stroke="var(--green)" stroke-width="2"/>
+            <path d="M0 -26L9 -8H-9z" fill="var(--cyan)"/>
+          </g>
+          <text x="165" y="296" fill="var(--green)" font-size="12" id="mapId">ID: --</text>
+          <text x="282" y="32" fill="var(--text)" font-size="13" text-anchor="end">N&#8593;</text>
+        </svg>
+        <div class="stats">
+          <div class="stat"><small>X map</small><b id="px">--</b> m</div>
+          <div class="stat"><small>Y map</small><b id="py">--</b> m</div>
+          <div class="stat"><small>Heading</small><b id="ph">--</b>&deg;</div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Line tracking <span class="tag"><span class="dot bad" id="dotLine"></span>Waiting</span></h2>
+        <div class="two">
+          <div class="big"><small>Line detected</small><b id="lineDetected">--</b></div>
+          <div class="big"><small>Line error (−1 to +1)</small><b id="lineError">--</b></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Column 3: odometry + marker status -->
+    <div class="col c3">
+      <div class="panel">
+        <h2>Wheel odometry <span class="tag"><span class="dot bad" id="dotOdom"></span>Waiting</span></h2>
+        <div class="two">
+          <div class="big"><small>Linear speed</small><b id="linearSpeed">--<em>m/s</em></b></div>
+          <div class="big"><small>Turn rate</small><b id="angularSpeed">--<em>rad/s</em></b></div>
+        </div>
+        <p style="color:var(--muted);margin:10px 0 0">Source: <code>/tb3_1/odom</code></p>
+      </div>
+      <div class="panel">
+        <h2>Marker status <span class="tag"><span class="dot bad" id="dotMarker"></span>Searching</span></h2>
+        <div class="two">
+          <div class="big"><small>Visible marker</small><b id="markerValue" style="font-size:22px">None</b></div>
+          <div class="big"><small>Distance</small><b id="markerDistance">--<em>m</em></b></div>
+        </div>
+        <p style="color:var(--muted);margin:10px 0 0">Marker detection updates when the camera sees an ArUco marker.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="manualHeading">
+    <h2 id="manualHeading">Manual drive</h2>
+    <div class="manual-warning" role="alert">
+      Manual drive publishes to <code>/tb3_1/cmd_vel</code>. Stop the autonomous line follower before arming these controls; this dashboard cannot pause it.
+    </div>
+    <label class="manual-arm">
+      <input id="manualArm" type="checkbox">
+      <span>I have stopped autonomy and confirmed the robot's path is clear.</span>
+    </label>
+    <div class="manual-controls" role="group" aria-label="Hold a direction to drive">
+      <span></span>
+      <button type="button" data-control="forward" data-linear="0.10" data-angular="0" aria-label="Hold to drive forward" aria-pressed="false" disabled>↑</button>
+      <span></span>
+      <button type="button" data-control="left" data-linear="0" data-angular="0.25" aria-label="Hold to turn left" aria-pressed="false" disabled>←</button>
+      <button type="button" data-control="stop" aria-label="Stop robot" disabled>STOP</button>
+      <button type="button" data-control="right" data-linear="0" data-angular="-0.25" aria-label="Hold to turn right" aria-pressed="false" disabled>→</button>
+      <span></span>
+      <button type="button" data-control="backward" data-linear="-0.10" data-angular="0" aria-label="Hold to drive backward" aria-pressed="false" disabled>↓</button>
+      <span></span>
+    </div>
+    <p class="manual-status" id="manualStatus" role="status">Connect to ROS and arm manual drive to enable controls.</p>
+    <p class="manual-note">Hold a direction or use the arrow keys / W A S D. Releasing stops the command. Speeds are capped at 0.10 m/s and 0.25 rad/s.</p>
+  </section>
+
+  <section class="panel">
+    <h2>System status</h2>
+    <div class="status-row" id="sysRow">
+      <div class="status-item" data-k="connection"><small><span class="dot bad"></span>ROS bridge</small><b>Disconnected</b></div>
+      <div class="status-item" data-k="line"><small><span class="dot bad"></span>Line detector</small><b>No data</b></div>
+      <div class="status-item" data-k="aruco"><small><span class="dot bad"></span>ArUco detector</small><b>No data</b></div>
+      <div class="status-item" data-k="odom"><small><span class="dot bad"></span>Wheel odometry</small><b>No data</b></div>
+      <div class="status-item" data-k="pose"><small><span class="dot bad"></span>Map localization</small><b>No data</b></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Connection</h2>
+    <p style="color:var(--muted);margin:0">Connect rosbridge on the robot, then open this page from a browser on the same network. If rosbridge is at a different address, add <code>?rosbridge=ws://ROBOT_IP:9090</code> to the page URL.</p>
+  </section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/roslib@1.4.1/build/roslib.min.js"></script>
+<script>
+// Use ?rosbridge=ws://ROBOT_IP:9090 to override the default connection.
+const params = new URLSearchParams(location.search);
+const rosbridgeUrl = params.get("rosbridge") || `ws://${location.hostname || "localhost"}:9090`;
+const topics = {
+  pose: "/robot_pose_map", odom: "/tb3_1/odom",
+  cmdVel: "/tb3_1/cmd_vel",
+  lineDetected: "/hardware/line_detected", lineError: "/hardware/line_error",
+  markerId: "/aruco_id", markerDistance: "/aruco_distance", markerVisible: "/aruco_visible",
+  lineImage: "/hardware/yellow_line_debug/compressed",
+  markerImage: "/aruco_debug_image/compressed"
+};
+const $ = id => document.getElementById(id);
+const lastSeen = Object.create(null);
+let ros;
+let reconnectTimer;
+let currentMarker = null;
+let rosConnected = false;
+let manualPublisher = null;
+let manualTimer = null;
+let manualLinear = 0;
+let manualAngular = 0;
+const activeManualInputs = new Map();
+const manualControls = [...document.querySelectorAll(".manual-controls button[data-linear]")];
+const directionByKey = {
+  ArrowUp: "forward", w: "forward", W: "forward",
+  ArrowDown: "backward", s: "backward", S: "backward",
+  ArrowLeft: "left", a: "left", A: "left",
+  ArrowRight: "right", d: "right", D: "right"
+};
+let toastTimer;
+
+function toast(message) {
+  $("toast").textContent = message;
+  $("toast").classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $("toast").classList.remove("show"), 2800);
+}
+function setManualAvailability() {
+  const enabled = rosConnected && $("manualArm").checked;
+  document.querySelectorAll(".manual-controls button").forEach(button => {
+    button.disabled = !enabled;
+  });
+  if (!rosConnected) {
+    $("manualStatus").textContent = "Waiting for ROS connection.";
+  } else if (!enabled) {
+    $("manualStatus").textContent = "Arm manual drive after stopping autonomy.";
+  } else if (!activeManualInputs.size) {
+    $("manualStatus").textContent = "Manual drive armed. Hold a direction to move.";
+  }
+}
+function publishManualTwist(linear = 0, angular = 0) {
+  if (!rosConnected || !manualPublisher) return;
+  manualPublisher.publish({
+    linear: { x: linear, y: 0, z: 0 },
+    angular: { x: 0, y: 0, z: angular }
+  });
+}
+function updateManualMotion() {
+  manualLinear = 0;
+  manualAngular = 0;
+  for (const direction of activeManualInputs.values()) {
+    manualLinear += direction.linear;
+    manualAngular += direction.angular;
+  }
+  manualLinear = Math.max(-0.10, Math.min(0.10, manualLinear));
+  manualAngular = Math.max(-0.25, Math.min(0.25, manualAngular));
+  manualControls.forEach(button => {
+    const pressed = [...activeManualInputs.values()].some(direction => direction.name === button.dataset.control);
+    button.setAttribute("aria-pressed", String(pressed));
+  });
+  if (!activeManualInputs.size) {
+    clearInterval(manualTimer);
+    manualTimer = null;
+    publishManualTwist();
+    $("manualStatus").textContent = $("manualArm").checked ? "Manual drive armed. Hold a direction to move." : "Manual drive stopped.";
+    return;
+  }
+  publishManualTwist(manualLinear, manualAngular);
+  $("manualStatus").textContent = `Driving: ${manualLinear.toFixed(2)} m/s, ${manualAngular.toFixed(2)} rad/s`;
+  if (manualTimer === null) manualTimer = setInterval(() => publishManualTwist(manualLinear, manualAngular), 100);
+}
+function stopManualDrive() {
+  activeManualInputs.clear();
+  updateManualMotion();
+}
+function addManualInput(source, name, linear, angular) {
+  if (!rosConnected || !$("manualArm").checked) return;
+  activeManualInputs.set(source, { name, linear, angular });
+  updateManualMotion();
+}
+function removeManualInput(source) {
+  if (activeManualInputs.delete(source)) updateManualMotion();
+}
+function setupManualControls() {
+  manualControls.forEach(button => {
+    button.addEventListener("pointerdown", event => {
+      if (button.disabled) return;
+      event.preventDefault();
+      button.setPointerCapture(event.pointerId);
+      addManualInput(`pointer-${event.pointerId}`, button.dataset.control,
+        Number(button.dataset.linear), Number(button.dataset.angular));
+    });
+    const releasePointer = event => removeManualInput(`pointer-${event.pointerId}`);
+    button.addEventListener("pointerup", releasePointer);
+    button.addEventListener("pointercancel", releasePointer);
+    button.addEventListener("lostpointercapture", releasePointer);
+  });
+  document.querySelector('[data-control="stop"]').addEventListener("click", stopManualDrive);
+  $("manualArm").addEventListener("change", () => {
+    if (!$("manualArm").checked) stopManualDrive();
+    setManualAvailability();
+  });
+  window.addEventListener("keydown", event => {
+    const direction = directionByKey[event.key];
+    if (!direction || event.repeat || !rosConnected || !$("manualArm").checked) return;
+    const target = event.target;
+    if (target instanceof HTMLElement && (target.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(target.tagName))) return;
+    event.preventDefault();
+    const button = manualControls.find(control => control.dataset.control === direction);
+    addManualInput(`key-${event.key}`, direction, Number(button.dataset.linear), Number(button.dataset.angular));
+  });
+  window.addEventListener("keyup", event => removeManualInput(`key-${event.key}`));
+  window.addEventListener("blur", stopManualDrive);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) stopManualDrive();
+  });
+  setManualAvailability();
+}
+
+function setRun(label, connected = false) {
+  $("runText").textContent = label;
+  $("runBadge").querySelector(".dot").className = `dot${connected ? "" : " bad"}`;
+}
+function markSystem(key, ok, label) {
+  const item = document.querySelector(`[data-k="${key}"]`);
+  if (!item) return;
+  item.querySelector(".dot").className = `dot${ok ? "" : " bad"}`;
+  item.querySelector("b").textContent = label;
+}
+function seen(key) { lastSeen[key] = Date.now(); }
+function setImage(id, msg) {
+  const box = $(id);
+  let img = box.querySelector("img");
+  if (!img) {
+    box.replaceChildren();
+    img = document.createElement("img");
+    img.alt = id === "camFront" ? "Line detector camera" : "ArUco detector camera";
+    box.append(img);
+  }
+  const mime = (msg.format || "jpeg").toLowerCase().includes("png") ? "image/png" : "image/jpeg";
+  img.src = `data:${mime};base64,${msg.data}`;
+  const isLine = id === "camFront";
+  const key = isLine ? "line" : "aruco";
+  const dot = isLine ? "dotFront" : "dotDown";
+  $(dot).className = "dot";
+  markSystem(key, true, "Streaming");
+  seen(key);
+}
+function subscribe(name, type, callback) {
+  new ROSLIB.Topic({ ros, name, messageType: type, throttle_rate: 150 }).subscribe(callback);
+}
+function subscribeAll() {
+  subscribe(topics.pose, "geometry_msgs/msg/Pose2D", m => {
+    $("px").textContent = Number(m.x).toFixed(2);
+    $("py").textContent = Number(m.y).toFixed(2);
+    const heading = Number(m.theta) * 180 / Math.PI;
+    $("ph").textContent = Math.round(heading);
+    const mx = 150 + Number(m.x) * 30;
+    const my = 260 - Number(m.y) * 30;
+    $("robot").setAttribute("transform", `translate(${mx} ${my}) rotate(${90 - heading})`);
+    markSystem("pose", true, "Receiving");
+    $("dotPose").className = "dot";
+    seen("pose");
+  });
+  subscribe(topics.odom, "nav_msgs/msg/Odometry", m => {
+    $("linearSpeed").innerHTML = `${Number(m.twist.twist.linear.x).toFixed(2)}<em>m/s</em>`;
+    $("angularSpeed").innerHTML = `${Number(m.twist.twist.angular.z).toFixed(2)}<em>rad/s</em>`;
+    $("dotOdom").className = "dot";
+    markSystem("odom", true, "Receiving");
+    seen("odom");
+  });
+  subscribe(topics.lineDetected, "std_msgs/msg/Bool", m => {
+    $("lineDetected").textContent = m.data ? "Yes" : "No";
+    $("dotLine").className = `dot${m.data ? "" : " warn"}`;
+    markSystem("line", true, m.data ? "Line found" : "Line lost");
+    seen("line");
+  });
+  subscribe(topics.lineError, "std_msgs/msg/Float32", m => {
+    $("lineError").textContent = Number(m.data).toFixed(3);
+    seen("line");
+  });
+  subscribe(topics.markerId, "std_msgs/msg/Int32", m => {
+    currentMarker = Number(m.data) < 0 ? null : Number(m.data);
+    $("markerId").textContent = currentMarker === null ? "Marker: none" : `Marker: ID ${currentMarker}`;
+    $("mapId").textContent = `ID: ${currentMarker === null ? "--" : currentMarker}`;
+    $("markerValue").textContent = currentMarker === null ? "None" : `ID ${currentMarker}`;
+    $("dotMarker").className = `dot${currentMarker === null ? " warn" : ""}`;
+    markSystem("aruco", true, currentMarker === null ? "Searching" : `ID ${currentMarker}`);
+    seen("aruco");
+  });
+  subscribe(topics.markerDistance, "std_msgs/msg/Float32", m => {
+    $("markerDistance").innerHTML = `${Number(m.data).toFixed(2)}<em>m</em>`;
+    seen("aruco");
+  });
+  subscribe(topics.markerVisible, "std_msgs/msg/Bool", m => {
+    if (!m.data) {
+      currentMarker = null;
+      $("markerId").textContent = "Marker: none";
+      $("mapId").textContent = "ID: --";
+      $("markerValue").textContent = "None";
+      $("markerDistance").innerHTML = "--<em>m</em>";
+      $("dotMarker").className = "dot warn";
+      markSystem("aruco", true, "Searching");
+    }
+    seen("aruco");
+  });
+  subscribe(topics.lineImage, "sensor_msgs/msg/CompressedImage", m => setImage("camFront", m));
+  subscribe(topics.markerImage, "sensor_msgs/msg/CompressedImage", m => setImage("camDown", m));
+}
+function connectROS() {
+  if (typeof ROSLIB === "undefined") {
+    setRun("ROS library unavailable");
+    rosConnected = false;
+    setManualAvailability();
+    toast("Could not load ROSLIB. Check your internet connection.");
+    return;
+  }
+  clearTimeout(reconnectTimer);
+  ros = new ROSLIB.Ros({ url: rosbridgeUrl });
+  ros.on("connection", () => {
+    rosConnected = true;
+    setRun("Connected", true);
+    markSystem("connection", true, "Connected");
+    manualPublisher = new ROSLIB.Topic({
+      ros, name: topics.cmdVel, messageType: "geometry_msgs/msg/Twist", queue_size: 1
+    });
+    manualPublisher.advertise();
+    setManualAvailability();
+    subscribeAll();
+  });
+  ros.on("error", () => {
+    rosConnected = false;
+    $("manualArm").checked = false;
+    stopManualDrive();
+    setManualAvailability();
+    setRun("Connection error");
+    markSystem("connection", false, "Connection error");
+  });
+  ros.on("close", () => {
+    rosConnected = false;
+    $("manualArm").checked = false;
+    stopManualDrive();
+    manualPublisher = null;
+    setManualAvailability();
+    setRun("Disconnected");
+    markSystem("connection", false, "Disconnected");
+    reconnectTimer = setTimeout(connectROS, 3000);
+  });
+}
+setupManualControls();
+setInterval(() => {
+  $("clock").textContent = new Date().toLocaleString();
+  const online = (key, id, systemKey) => {
+    const ok = lastSeen[key] && Date.now() - lastSeen[key] < 3000;
+    if (!ok) {
+      if (id) $(id).className = "dot bad";
+      markSystem(systemKey, false, "No data");
+    }
+  };
+  online("line", "dotLine", "line");
+  online("aruco", "dotMarker", "aruco");
+  online("pose", "dotPose", "pose");
+  online("odom", "dotOdom", "odom");
+  if (!lastSeen.line || Date.now() - lastSeen.line >= 3000) $("dotFront").className = "dot bad";
+  if (!lastSeen.aruco || Date.now() - lastSeen.aruco >= 3000) $("dotDown").className = "dot bad";
+}, 1000);
+connectROS();
+</script>
+</body>
+</html>
